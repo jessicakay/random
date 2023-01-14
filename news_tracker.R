@@ -1,5 +1,5 @@
 
-# jessica.kant@childrens.harvard.edu
+# jkant@bu.edu
 
  install.packages("googlesheets4")
 
