@@ -29,7 +29,7 @@ headers   <- as.data.frame(cbind("EntryPublished","EntryTitle","EntryURL","Entry
 
 read_sheet(targsheet) -> dat
 read_sheet(tsheetall) -> dat2
-as.data.frame(rbind(dat,dat2)) %>% as_tibble() -> ds
+as.data.frame(rbind(dat,dat2)) %>% as_tib -> ds
 tail(ds)
 
 getthatbread<-function(){
@@ -52,10 +52,13 @@ getthatbread<-function(){
         ylab("number of articles")+
               theme_bw()+
         theme(legend.position = "bottom")+
-        facet_grid(region~.)
+        facet_grid(.~region)
     } 
 
 getthatbread()
+
+
+
 
 
 # adding stratification by keyword
