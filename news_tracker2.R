@@ -8,41 +8,34 @@ library(dplyr)
 library(png)
 library(stringr)
 library(lubridate)
-
+library(googlesheets4)
+ 
 # clean OAuth tokens and authenticate
 # detach(package:googlesheets4)
 # googlesheets4::gs4_auth()
  
+# headers   <- as.data.frame(cbind("EntryPublished","EntryTitle","EntryURL","EntryContent","FeedTitle","FeedURL","keyword","region"))
+# googlesheets4::sheet_append(tsheetall,as.vector(headers),sheet =1) # inserts headers into blank sheet, only run first time
  
- library(googlesheets4)
-
 # set global variables
 
 targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
 tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD3SZPc8XMQW-Q680FQ/edit?usp=sharing"
 
-headers   <- as.data.frame(cbind("EntryPublished","EntryTitle","EntryURL","EntryContent","FeedTitle","FeedURL","keyword","region"))
 
-
-
-# googlesheets4::sheet_append(tsheetall,as.vector(headers),sheet =1) # inserts headers into blank sheet, only run first time
-
-getthatbread<-function(){
   read_sheet(targsheet) -> dat
-  read_sheet(targsheet) -> dat2
+  read_sheet(tsheetall) -> dat2
   ds <- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
   str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+") -> ds$theday
   cat("\nlast 5 entries: \n\n")
-  tail(ds)
-  } 
-
-getthatbread()
+  tail(ds %>% arrange(desc(EntryPublished)),n=15)
 
 # basic plot
 
 ds %>%
+  mutate(theday=str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
   rename(timestamp = EntryPublished) %>%
-  mutate(the_day=as.Date(mdy(ds$theday))) %>%
+  mutate(the_day=as.Date(mdy(theday))) %>%
   group_by(the_day,region) %>%
   mutate(ct=n()) %>%
   ggplot()+
@@ -60,11 +53,12 @@ ds %>%
 ds %>%
   mutate(theday=str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
   rename(timestamp = EntryPublished) %>%
-  mutate(the_day=as.Date(mdy(ds$theday))) %>%
+  mutate(the_day=as.Date(mdy(theday))) %>%
   group_by(the_day,region,keyword) %>%
   mutate(ct=n()) %>%
   ggplot()+
-  geom_line(aes(x=the_day,y=ct,color=region, colour="daily")) +
+  geom_line(aes(x=the_day,y=ct,color=region, colour="daily"))+
+  geom_point(aes(x=the_day,y=ct,color=region, colour="daily"))+
   labs(title = "Articles about trans people in US + UK news media",
        subtitle = "https://tech.lgbt/@jessdkant",
        caption=paste("updated",Sys.time()))+
