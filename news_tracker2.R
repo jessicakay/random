@@ -28,7 +28,7 @@ tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD
   ds <- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
   str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+") -> ds$theday
   cat("\nlast 5 entries: \n\n")
-  tail(ds %>% arrange(desc(EntryPublished)),n=15)
+  tail(ds %>% arrange(desc(EntryPublished)),n=10)
 
 # basic plot
 
