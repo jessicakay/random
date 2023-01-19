@@ -17,6 +17,7 @@ library(googlesheets4)
 # headers   <- as.data.frame(cbind("EntryPublished","EntryTitle","EntryURL","EntryContent","FeedTitle","FeedURL","keyword","region"))
 # googlesheets4::sheet_append(tsheetall,as.vector(headers),sheet =1) # inserts headers into blank sheet, only run first time
  
+
 # set global variables
 
 targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
@@ -29,6 +30,7 @@ tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD
   cat("\nlast 5 entries: \n\n")
   tail(ds %>% arrange(desc(EntryPublished)),n=10)
 
+
 # basic plot
 
 ds %>%
@@ -36,13 +38,7 @@ ds %>%
   rename(timestamp = EntryPublished) %>%
   mutate(the_day=as.Date(mdy(theday))) ->ds
   
-# ds %>% group_by(the_day,region) %>% mutate(ct=n()) 
-
-ds %>%
-  group_by(the_day,region,keyword) %>%
-  mutate(ct=n()) -> ds
-
-ds %>%
+ds %>% group_by(the_day,region) %>% mutate(ct=n()) %>%
   ggplot()+
   geom_line(aes(x=the_day,y=ct,color=region, colour="daily")) +
   labs(title = "Articles about trans people in US + UK news media",
@@ -53,33 +49,10 @@ ds %>%
   theme_bw()+
   theme(legend.position = "bottom")
 
+
 # stratify by keyword
 
-
-ds %>% 
-  group_by(the_day,region,keyword) %>%
-  mutate(ct=n()) %>%
-  
-  ggplot()+
-  geom_line(aes(x=the_day,y=ct,color=region, colour="daily"))+
-  geom_point(aes(x=the_day,y=ct,color=region, colour="daily"))+
-  labs(title = "Articles about trans people in US + UK news media",
-       subtitle = "https://tech.lgbt/@jessdkant",
-       caption=paste("updated",Sys.time()))+
-  xlab(element_blank())+
-  ylab("number of articles")+
-  theme_bw()+
-  theme(legend.position = "bottom")+
-  facet_grid(keyword~region)
-
-
-ds %>%
-  mutate(theday=str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-  rename(timestamp = EntryPublished) %>%
-  mutate(the_day=as.Date(mdy(theday))) %>%
-  group_by(the_day,region,keyword) %>%
-  mutate(ct=n()) %>%
-  ggplot()+
+ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>%  ggplot()+
   geom_line(aes(x=the_day,y=ct,color=region, colour="daily"))+
   geom_point(aes(x=the_day,y=ct,color=region, colour="daily"))+
   labs(title = "Articles about trans people in US + UK news media",
