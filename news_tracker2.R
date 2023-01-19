@@ -11,10 +11,12 @@
   library(googlesheets4)
  
 # clean OAuth tokens and authenticate
-# detach(package:googlesheets4)
-# googlesheets4::gs4_auth()
-# headers   <- as.data.frame(cbind("EntryPublished","EntryTitle","EntryURL","EntryContent","FeedTitle","FeedURL","keyword","region"))
-# googlesheets4::sheet_append(tsheetall,as.vector(headers),sheet =1) # inserts headers into blank sheet, only run first time
+#
+#   detach(package:googlesheets4)
+#   googlesheets4::gs4_auth()
+#   headers <- c("EntryPublished","EntryTitle","EntryURL","EntryContent","FeedTitle","FeedURL","keyword","region")
+#   headers   <- as.data.frame(cbind(headers))
+#   googlesheets4::sheet_append(tsheetall,as.vector(headers),sheet =1) # inserts headers into blank sheet, only run first time
 #
 # set global variables
 
@@ -24,18 +26,16 @@ tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD
   read_sheet(targsheet) -> dat
   read_sheet(tsheetall) -> dat2
   ds <- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
-  cat("\nlast 5 entries: \n\n")
-  tail(ds %>% arrange(desc(EntryPublished)),n=10)
+  ds %>%
+    mutate(theday=str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
+    rename(timestamp = EntryPublished) %>%
+    mutate(the_day=as.Date(mdy(theday))) ->ds
+  cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(desc(EntryPublished)),n=10)
 
+  
 # basic plot
 
-ds %>%
-  mutate(theday=str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-  rename(timestamp = EntryPublished) %>%
-  mutate(the_day=as.Date(mdy(theday))) ->ds
-  
-ds %>% group_by(the_day,region) %>% mutate(ct=n()) %>%
-  ggplot()+
+ds %>% group_by(the_day,region) %>% mutate(ct=n()) %>% ggplot()+
   geom_line(aes(x=the_day,y=ct,color=region, colour="daily")) +
   labs(title = "Articles about trans people in US + UK news media",
        subtitle = "https://tech.lgbt/@jessdkant",
@@ -45,9 +45,10 @@ ds %>% group_by(the_day,region) %>% mutate(ct=n()) %>%
   theme_bw()+
   theme(legend.position = "bottom")
 
+
 # stratify by keyword
 
-ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>%  ggplot()+
+ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>% ggplot()+
   geom_line(aes(x=the_day,y=ct,color=region, colour="daily"))+
   geom_point(aes(x=the_day,y=ct,color=region, colour="daily"))+
   labs(title = "Articles about trans people in US + UK news media",
@@ -58,6 +59,7 @@ ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>%  ggplot()+
   theme_bw()+
   theme(legend.position = "bottom")+
   facet_grid(keyword~region)
+
 
 # experimental NLP section, keywords used to further tag items
 
