@@ -76,13 +76,24 @@ dat %>% mutate(topic=case_when(
 
   names(select(ds, contains("tag_"))) -> colIDS # find all tags
 
+  
+  
 
 ds %>% select(all_of(colIDS), region,the_day) %>%
-  group_by(the_day,region )%>%
+  group_by(the_day,region) -> wordset
+
   mutate(tag_count = n()) %>% 
+  ungroup() %>%
   as_tibble() -> thecount 
 
 ds %>% select(all_of(colIDS), region, the_day) %>% group_by(the_day,region)%>% summarise(tag_count = n()) %>%
-ggplot()+
-    geom_count(aes(x=the_day,y=tag_count))
+    ggplot()+
+    geom_bar(aes(x=the_day))
 
+
+gsub("<b>|</b>|&nbsp;|;|&#39;|(|)|\\...|&quo","",paste(ds$EntryContent,collapse = " ")) -> x
+
+
+TermDocumentMatrix(Corpus(VectorSource(x))) -> term_matrix
+findFreqTerms(term_matrix,lowfreq = 50)
+findAssocs(x,term="transgender")
