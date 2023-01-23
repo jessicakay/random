@@ -27,8 +27,7 @@ tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD
   read_sheet(tsheetall) -> dat2
   ds <- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
   ds %>%
-    mutate(theday=str_extract(ds$EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-    rename(timestamp = EntryPublished) %>%
+    mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
     mutate(the_day=as.Date(mdy(theday))) ->ds
   cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(desc(EntryPublished)),n=10)
 
@@ -64,16 +63,26 @@ ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>% ggplot()+
 # experimental NLP section, keywords used to further tag items
 
 dat %>% mutate(topic=case_when(
-  str_detect(EntryContent,"(?i)sport|(?i)athlet") == TRUE ~ ("sports"),
+  str_detect(EntryContent,"(?i)sport|(?i)athlet") == TRUE ~ "sports",
   str_detect(EntryContent,"(?i)school|(?i)educat|(?i)universit") == TRUE ~ list("education"),
   str_detect(EntryContent,"(?i)restroom|(?i)bathroom|(?i)locker")== TRUE ~ list("bathrooms"),
   str_detect(EntryContent,"(?i)legislat|(?i)bill") == TRUE ~ list("legislation"))) %>%
   select(EntryContent,topic) %>% View()
 
-dat %>%
-mutate(article_type = 
-         case_when(
-           grepl(("sport|athletic|athlete|competition"      ),  dat$EntryContent) == TRUE ~"sport",
-           grepl(("prison|prisoner|inmate"                  ),  dat$EntryContent) == TRUE ~"prison",
-           grepl(("school|pupil|principle|teacher|teach"    ),  dat$EntryContent) == TRUE ~"school"
-         )) %>% View()
+  ds$tag_sports <- ifelse(grepl("(?i)sport|(?i)athletic|(?i)athlete|(?i)competition", ds$EntryContent),1,0)
+  ds$tag_leg    <- ifelse(grepl("(?i)bill|(?i)legislat",                              ds$EntryContent),1,0)
+  ds$tag_school <- ifelse(grepl("(?i)school|(?i)educat|(?i)universit",                ds$EntryContent),1,0)
+  ds$tag_sglsex <- ifelse(grepl("(?i)women\\sonly|(?i)single-sex|(?i)sex-based",      ds$EntryContent),1,0)
+
+  names(select(ds, contains("tag_"))) -> colIDS # find all tags
+
+
+ds %>% select(all_of(colIDS), region,the_day) %>%
+  group_by(the_day,region )%>%
+  mutate(tag_count = n()) %>% 
+  as_tibble() -> thecount 
+
+ds %>% select(all_of(colIDS), region, the_day) %>% group_by(the_day,region)%>% summarise(tag_count = n()) %>%
+ggplot()+
+    geom_count(aes(x=the_day,y=tag_count))
+
