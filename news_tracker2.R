@@ -84,37 +84,65 @@ mutate(topic=case_when(
   ggplot()+
   geom_bar(aes(x=the_day, fill=topic), position="fill")+
   facet_grid(keyword~region)+
-  theme(legend.position = "bottom")+
   theme_bw()+
+  theme(legend.position = "bottom")+
   scale_fill_discrete(name="keyword")+
   labs(y="proportion of articles",x=element_blank()) -> bottom
 
-
 gridExtra::grid.arrange(kw,bottom)
+
+# URL plot
+
+substring(str_extract(ds$EntryURL, pattern="https:\\/\\/?[a-z]+.[a-zA-Z0-9]+?.?[a-z]+/"), first=9) -> ds$pullURL
+
+min_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% quantile(c(.98)))
+max_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% max)
+
+month(head(sort(ds$the_day))[1]) -> start_month
+  day(head(sort(ds$the_day))[1]) -> start_day
+
+ds %>%
+  select(region, the_day, pullURL) %>%
+  filter(!is.na(pullURL) & pullURL != "www.youtube.com/") %>%
+  group_by(pullURL,.drop=FALSE) %>%
+  summarize(count=n()) %>% filter(count>min_arts) %>%
+  ggplot()+
+  theme_minimal()+
+  scale_fill_discrete(element_blank())+
+  geom_bar(aes(x=count,fill=pullURL),position = "dodge")+
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank())+
+  labs(y=element_blank(),x="# articles per outlet",
+       title = paste("\ntop news sources, 99th percentile (",round(min_arts),"+ max = ", max_arts, ") since: ", start_month,"/",start_day,": \n", sep="")) -> urlPlot
+
+gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1))
+
+# attempt using base R
+
+substring(str_extract(ds$EntryURL[-which(str_detect(ds$EntryURL,pattern="www"))], 
+                      pattern="https:\\/\\/?.[a-zA-Z0-9]+?.?[a-z]+/"), first=9) -> urlList
+append(substring(str_extract(ds$EntryURL[which(str_detect(ds$EntryURL,pattern="www"))], 
+                             pattern="https:\\/\\/?www.[a-zA-Z0-9]+?.?[a-z]+/"), first=9),urlList) -> x
+as.data.frame(x)->x
 
 
 # experimental NLP section, keywords used to further tag items
 
-  ds$tag_sports <- ifelse(grepl("(?i)sport|(?i)athletic|(?i)athlete|(?i)competition", ds$EntryContent),1,0)
-  ds$tag_leg    <- ifelse(grepl("(?i)bill|(?i)legislat",                              ds$EntryContent),1,0)
-  ds$tag_school <- ifelse(grepl("(?i)school|(?i)educat|(?i)universit",                ds$EntryContent),1,0)
-  ds$tag_sglsex <- ifelse(grepl("(?i)women\\sonly|(?i)single-sex|(?i)sex-based",      ds$EntryContent),1,0)
+ds$tag_sports <- ifelse(grepl("(?i)sport|(?i)athletic|(?i)athlete|(?i)competition", ds$EntryContent),1,0)
+ds$tag_leg    <- ifelse(grepl("(?i)bill|(?i)legislat",                              ds$EntryContent),1,0)
+ds$tag_school <- ifelse(grepl("(?i)school|(?i)educat|(?i)universit",                ds$EntryContent),1,0)
+ds$tag_sglsex <- ifelse(grepl("(?i)women\\sonly|(?i)single-sex|(?i)sex-based",      ds$EntryContent),1,0)
 
 
 colIDs <- names(select(ds, contains("tag_")))
-  
-ds[which(ds$tag_leg==1),] %>%
-  select(tag_leg, region,the_day) %>% 
-  ggplot()+geom_bar(aes(x=the_day,fill=region))+facet_grid(.~region)
 
-
-ds %>% select(contains("tag_"), region,the_day) %>% ggplot(aes(x=the_day))+ 
-  geom_bar(aes(fill=region))
+ds[which(ds$tag_leg==1),] %>% select(tag_leg, region,the_day) %>% ggplot()+
+  geom_bar(aes(x=the_day,fill=region))
 
 
 
 ds %>% tidyr::unite("tags",colIDs, sep = ",", remove = FALSE) %>% select(tags) %>% View()
-  
+
 
 gsub("<b>|</b>|&nbsp;|;|&#39;|(|)|\\...|&quo","",paste(ds$EntryContent,collapse = " ")) -> x
 
@@ -122,3 +150,4 @@ gsub("<b>|</b>|&nbsp;|;|&#39;|(|)|\\...|&quo","",paste(ds$EntryContent,collapse 
 TermDocumentMatrix(Corpus(VectorSource(x))) -> term_matrix
 findFreqTerms(term_matrix,lowfreq = 50)
 findAssocs(x,term="transgender")
+
