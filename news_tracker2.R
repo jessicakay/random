@@ -59,28 +59,19 @@ ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>% ggplot()+
   theme(legend.position = "bottom")+
   facet_grid(keyword~region) -> kw
 
-
 ds %>% 
+  mutate(textcontent = paste(EntryContent,EntryTitle)) %>%
   mutate(topic=case_when(
-  str_detect(EntryContent,"(?i)sport|(?i)athlet|(?i)competiti|(?i)swim") == TRUE ~ "sports",
-  str_detect(EntryContent,"(?i)restroom|(?i)bathroom|(?i)locker|(?i)naked")== TRUE ~ "bathrooms",
-  str_detect(EntryContent,"(?i)school|(?i)educat|(?i)universit|(?i)college") == TRUE ~ "education",
-  str_detect(EntryContent,"(?i)detrans|(?i)desist|(?i)de-trans") == TRUE ~ "detransition",
-  str_detect(EntryContent,"(?i)mental\\s(?i)ilness|(?i)disorder|(?i)therapy|(?i)psychiatr|(?i)psychology") == TRUE ~ "therapy",
-  str_detect(EntryContent,"(?i)supreme|(?i)court|(?i)discriminat|(?i)lawsuit|(?i)legal") == TRUE ~ "courts",
-  str_detect(EntryContent,"(?i)actor|(?i)film|(?i)movie|(?i)television|(?i)author|(?i)actress") == TRUE ~ "entertainment",
-  str_detect(EntryContent,"(?i)legislat|(?i)bill|(?i)lawmaker|(?i)reform|(?i)senate|(?i)ban") == TRUE ~ "legislation",
-  str_detect(EntryContent,"(?i)medical|(?i)healthcare|(?i)hormone|(?i)medication|(?i)surgery|(?i)physician") == TRUE ~ "healthcare")) %>% 
-mutate(topic=case_when(
-  str_detect(EntryTitle,"(?i)sport|(?i)athlet|(?i)competiti|(?i)swim") == TRUE ~ "sports",
-  str_detect(EntryTitle,"(?i)restroom|(?i)bathroom|(?i)locker|(?i)naked")== TRUE ~ "bathrooms",
-  str_detect(EntryTitle,"(?i)school|(?i)educat|(?i)universit|(?i)college") == TRUE ~ "education",
-  str_detect(EntryTitle,"(?i)detrans|(?i)desist|(?i)de-trans") == TRUE ~ "detransition",
-  str_detect(EntryTitle,"(?i)mental\\s(?i)ilness|(?i)disorder|(?i)therapy|(?i)psychiatr|(?i)psychology") == TRUE ~ "therapy",
-  str_detect(EntryTitle,"(?i)supreme|(?i)court|(?i)discriminat|(?i)lawsuit|(?i)legal") == TRUE ~ "courts",
-  str_detect(EntryTitle,"(?i)actor|(?i)film|(?i)movie|(?i)television|(?i)author|(?i)actress") == TRUE ~ "entertainment",
-  str_detect(EntryTitle,"(?i)legislat|(?i)bill|(?i)lawmaker|(?i)reform|(?i)senate|(?i)ban") == TRUE ~ "legislation",
-  str_detect(EntryTitle,"(?i)medical|(?i)healthcare|(?i)hormone|(?i)medication|(?i)surgery|(?i)physician") == TRUE ~ "healthcare")) %>%  
+    str_detect(textcontent,"(?i)sport|(?i)athlet|(?i)competiti|(?i)swim|(?i)hockey|(?i)rugby") == TRUE ~ "sports",
+    str_detect(textcontent,"(?i)restroom|(?i)bathroom|(?i)locker|(?i)naked|(?i)ymca")== TRUE ~ "bathrooms",
+    str_detect(textcontent,"(?i)school|(?i)educat|(?i)universit|(?i)college|(?i)dormit|(?i)student") == TRUE ~ "education",
+    str_detect(textcontent,"(?i)detrans|(?i)desist|(?i)de-trans|(?i)regret") == TRUE ~ "detransition",
+    str_detect(textcontent,"(?i)mental\\s(?i)ilness|(?i)disorder|(?i)therapy|(?i)psychiatr|(?i)psychology") == TRUE ~ "therapy",
+    str_detect(textcontent,"(?i)supreme|(?i)court|(?i)discriminat|(?i)lawsuit|(?i)legal|(?i)lawyer|(?i)arrest") == TRUE ~ "courts",
+    str_detect(textcontent,"(?i)actor|(?i)film|(?i)movie|(?i)television|(?i)author|(?i)actress|(?i)singer") == TRUE ~ "entertainment",
+    str_detect(textcontent,"(?i)legislat|(?i)bill|(?i)lawmaker|(?i)reform|(?i)senat|(?i)ban|(?i)house\\s(?i)repre") == TRUE ~ "legislation",
+    str_detect(textcontent,"(?i)medical|(?i)healthcare|(?i)hormone|(?i)medication|(?i)surgery|(?i)physician") == TRUE ~ "healthcare"
+    )) %>% 
   ggplot()+
   geom_bar(aes(x=the_day, fill=topic), position="fill")+
   facet_grid(keyword~region)+
@@ -113,7 +104,8 @@ ds %>%
   theme(legend.position = "bottom",
         axis.text.y = element_blank())+
   labs(y=element_blank(),x="# articles per outlet",
-       title = paste("\ntop news sources, 99th percentile (",round(min_arts),"+ max = ", max_arts, ") since: ", start_month,"/",start_day,": \n", sep="")) -> urlPlot
+       title = paste("\ntop news sources, 99th percentile (",round(min_arts),"+ max = ", max_arts, ") since: ", 
+                     start_month,"/",start_day,": \n", sep="")) -> urlPlot
 
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1))
 
