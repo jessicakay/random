@@ -31,20 +31,6 @@ tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD
     mutate(the_day=as.Date(mdy(theday))) ->ds
   cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(EntryPublished),n=10)
 
-  
-# basic plot
-
-ds %>% group_by(the_day,region) %>% mutate(ct=n()) %>% ggplot()+
-  geom_line(aes(x=the_day,y=ct,color=region, colour="daily")) +
-  labs(title = "Articles about trans people in US + UK news media",
-       subtitle = "https://tech.lgbt/@jessdkant",
-       caption=paste("updated",Sys.time()))+
-  xlab(element_blank())+
-  ylab("number of articles")+
-  theme_bw()+
-  theme(legend.position = "bottom")
-
-
 # stratify by keyword
 
 ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>% ggplot()+
@@ -67,11 +53,11 @@ ds %>%
     str_detect(textcontent,"(?i)school|(?i)educat|(?i)universit|(?i)college|(?i)dormit|(?i)student") == TRUE ~ "education",
     str_detect(textcontent,"(?i)detrans|(?i)desist|(?i)de-trans|(?i)regret") == TRUE ~ "detransition",
     str_detect(textcontent,"(?i)mental\\s(?i)ilness|(?i)disorder|(?i)therapy|(?i)psychiatr|(?i)psychology") == TRUE ~ "therapy",
-    str_detect(textcontent,"(?i)supreme|(?i)court|(?i)discriminat|(?i)lawsuit|(?i)legal|(?i)lawyer|(?i)arrest") == TRUE ~ "courts",
+    str_detect(textcontent,"(?i)supreme|(?i)court|(?i)discriminat|(?i)lawsuit|(?i)legal|(?i)lawyer") == TRUE ~ "judicidial",
     str_detect(textcontent,"(?i)actor|(?i)film|(?i)movie|(?i)television|(?i)author|(?i)actress|(?i)singer") == TRUE ~ "entertainment",
     str_detect(textcontent,"(?i)legislat|(?i)bill|(?i)lawmaker|(?i)reform|(?i)senat|(?i)ban|(?i)house\\s(?i)repre") == TRUE ~ "legislation",
-    str_detect(textcontent,"(?i)medical|(?i)healthcare|(?i)hormone|(?i)medication|(?i)surgery|(?i)physician") == TRUE ~ "healthcare"
-    )) %>% 
+    str_detect(textcontent,"(?i)medical|(?i)healthcare|(?i)hormone|(?i)medication|(?i)surgery|(?i)physician") == TRUE ~ "healthcare",
+    str_detect(textcontent,"(?i)murder|(?i)rape|(?i)rapist|(?i)kidnap|(?i)killed|(?i)offender|(?i)predator|(?i)assault") == TRUE ~ "crime")) %>% 
   ggplot()+
   geom_bar(aes(x=the_day, fill=topic), position="fill")+
   facet_grid(keyword~region)+
@@ -131,15 +117,18 @@ colIDs <- names(select(ds, contains("tag_")))
 ds[which(ds$tag_leg==1),] %>% select(tag_leg, region,the_day) %>% ggplot()+
   geom_bar(aes(x=the_day,fill=region))
 
-
-
 ds %>% tidyr::unite("tags",colIDs, sep = ",", remove = FALSE) %>% select(tags) %>% View()
 
+# NLP using TM package
 
-gsub("<b>|</b>|&nbsp;|;|&#39;|(|)|\\...|&quo","",paste(ds$EntryContent,collapse = " ")) -> x
+library(tm)
 
+gsub("<b>|</b>|&nbsp;|;|&#39;|(|)|\\...|&quo","",paste(ds$EntryContent,ds$EntryTitle,collapse = " ")) -> x
 
+as.data.frame(strsplit(x," ")) -> z
+VCorpus(VectorSource(z)) -> zx
+tm_map(zx,removeWords,stopwords(kind = "en")) -> z
+findFreqTerms(term_matrix,lowfreq = 150)
 TermDocumentMatrix(Corpus(VectorSource(x))) -> term_matrix
-findFreqTerms(term_matrix,lowfreq = 50)
-findAssocs(x,term="transgender")
+findAssocs(term_matrix, term="transgender",corlimit = 0.1)
 
