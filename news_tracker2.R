@@ -95,6 +95,14 @@ month(head(sort(ds$the_day))[1]) -> start_month
 
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1))
 
+
+
+
+
+
+
+# below this line is more of a scrap notebook to be incorporated later ; will deprecate
+# 
 # attempt using base R
 
 substring(str_extract(ds$EntryURL[-which(str_detect(ds$EntryURL,pattern="www"))], 
@@ -102,7 +110,6 @@ substring(str_extract(ds$EntryURL[-which(str_detect(ds$EntryURL,pattern="www"))]
 append(substring(str_extract(ds$EntryURL[which(str_detect(ds$EntryURL,pattern="www"))], 
                              pattern="https:\\/\\/?www.[a-zA-Z0-9]+?.?[a-z]+/"), first=9),urlList) -> x
 as.data.frame(x)->x
-
 
 # experimental NLP section, keywords used to further tag items
 
@@ -131,7 +138,6 @@ tm_map(zx,removeWords,stopwords(kind = "en")) -> z
 findFreqTerms(term_matrix,lowfreq = 150)
 TermDocumentMatrix(Corpus(VectorSource(x))) -> term_matrix
 findAssocs(term_matrix, term="transgender",corlimit = 0.1)
-
 
 # RSS directly
 
