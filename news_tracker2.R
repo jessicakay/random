@@ -23,13 +23,15 @@
 targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
 tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD3SZPc8XMQW-Q680FQ/edit?usp=sharing"
 
-  read_sheet(targsheet) -> dat
-  read_sheet(tsheetall) -> dat2
-  ds <- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
+refresh<-function(){
+  read_sheet(targsheet) -> dat  
+  read_sheet(tsheetall) -> dat2 
+  ds <<- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
   ds %>%
     mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-    mutate(the_day=as.Date(mdy(theday))) ->ds
+    mutate(the_day=as.Date(mdy(theday))) ->> ds
   cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(EntryPublished),n=10)
+  }
 
 # stratify by keyword
 
@@ -71,14 +73,12 @@ gridExtra::grid.arrange(kw,bottom)
 # URL plot
 
 substring(str_extract(ds$EntryURL, pattern="https:\\/\\/?[a-z]+.[a-zA-Z0-9]+?.?[a-z]+/"), first=9) -> ds$pullURL
-
 min_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% quantile(c(.98)))
 max_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% max)
-
 month(head(sort(ds$the_day))[1]) -> start_month
   day(head(sort(ds$the_day))[1]) -> start_day
 
-ds %>%
+  ds %>%
   select(region, the_day, pullURL) %>%
   filter(!is.na(pullURL) & pullURL != "www.youtube.com/") %>%
   group_by(pullURL,.drop=FALSE) %>%
@@ -90,7 +90,7 @@ ds %>%
   theme(legend.position = "bottom",
         axis.text.y = element_blank())+
   labs(y=element_blank(),x="# articles per outlet",
-       title = paste("\ntop news sources, 99th percentile (",round(min_arts),"+ max = ", max_arts, ") since: ", 
+       title = paste("\ntop news sources, 98th percentile (",round(min_arts),"+ max = ", max_arts, ") since: ", 
                      start_month,"/",start_day,": \n", sep="")) -> urlPlot
 
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1))
@@ -132,3 +132,10 @@ findFreqTerms(term_matrix,lowfreq = 150)
 TermDocumentMatrix(Corpus(VectorSource(x))) -> term_matrix
 findAssocs(term_matrix, term="transgender",corlimit = 0.1)
 
+
+# RSS directly
+
+install.packages("tidyRSS")
+library(tidyRSS)
+
+tidyRSS::tidyfeed(feed = "https://www.google.com/alerts/feeds/02717371275706320887/1916116072231156194")
