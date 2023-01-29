@@ -96,9 +96,10 @@ month(head(sort(ds$the_day))[1]) -> start_month
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1))
 
 
+# 
 
-
-
+googledrive::drive_ls() -> file_list
+googledrive::drive_find(pattern = "trans news tracker")
 
 
 # below this line is more of a scrap notebook to be incorporated later ; will deprecate
