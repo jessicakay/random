@@ -22,16 +22,28 @@
 
 targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
 tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD3SZPc8XMQW-Q680FQ/edit?usp=sharing"
+read_sheet(targsheet) -> dat  
+read_sheet(tsheetall) -> dat2 
+
+install.packages("googledrive") ; library(googledrive)
+
+
 
 refresh<-function(){
-  read_sheet(targsheet) -> dat  
-  read_sheet(tsheetall) -> dat2 
-  ds <<- as.data.frame(rbind(dat,dat2)) %>% as_tibble()
-  ds %>%
-    mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-    mutate(the_day=as.Date(mdy(theday))) ->> ds
-  cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(EntryPublished),n=10)
+  googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
+  dat <<- NULL
+  for(i in 1:dim(data_sheets)[1]){
+    if(i==1){
+      googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
+    }else{rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) -> dat }
+    dat -> ds ; dat ->> ds}
   }
+
+as.data.frame(ds) %>% as_tibble() -> ds
+ds %>%
+  mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
+  mutate(the_day=as.Date(mdy(theday))) ->> ds
+cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(EntryPublished),n=10)
 
 # stratify by keyword
 
@@ -94,23 +106,6 @@ month(head(sort(ds$the_day))[1]) -> start_month
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1.25))
 
 
-# 
-
-install.packages("googledrive") ; library(googledrive)
-
-googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
-
-
-googlesheets4::read_sheet(data_sheets)
-
-dat <- NULL
-for(i in 1:dim(data_sheets)[1]){
-  if(i==1){
-    googlesheets4::read_sheet(data_sheets$id[i]) -> dat
-  }else{
-  rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) ->> dat
-  }
-  }
 
 as.data.frame(rbind(dat,dat2)) %>% as_tibble()
 
