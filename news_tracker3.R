@@ -20,24 +20,20 @@
 #
 # set global variables
 
-targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
-tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD3SZPc8XMQW-Q680FQ/edit?usp=sharing"
-read_sheet(targsheet) -> dat  
-read_sheet(tsheetall) -> dat2 
-
-install.packages("googledrive") ; library(googledrive)
-
-
+# install.packages("googledrive") ; library(googledrive)
+# targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
+# tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD3SZPc8XMQW-Q680FQ/edit?usp=sharing"
+# read_sheet(targsheet) -> dat  
+# read_sheet(tsheetall) -> dat2 
 
 refresh<-function(){
   googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
   dat <<- NULL
   for(i in 1:dim(data_sheets)[1]){
-    if(i==1){
-      googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
+    if(i==1){googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
     }else{rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) -> dat }
-    dat -> ds ; dat ->> ds}
-  }
+    dat -> ds ; dat ->> ds}}
+refresh()
 
 as.data.frame(ds) %>% as_tibble() -> ds
 ds %>%
