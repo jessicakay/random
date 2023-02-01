@@ -30,16 +30,24 @@ refresh<-function(){
   googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
   dat <<- NULL
   for(i in 1:dim(data_sheets)[1]){
-    if(i==1){googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
+  if(i==1){googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
     }else{rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) -> dat }
-    dat -> ds ; dat ->> ds}}
+  dat -> ds ; dat ->> ds}
+  as.data.frame(ds) %>% as_tibble() -> ds
+  ds %>%
+    mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
+    mutate(the_day=as.Date(mdy(theday))) -> ds
+  assign("ds",ds,envir = .GlobalEnv)
+    cat("\nlast 5 entries: \n\n")
+    print(tail(ds %>% arrange(EntryPublished),n=10))
+    cat(paste("\n ->",dim(ds)[1]," rows, ",dim(ds)[2]," variables | avg. = ",
+              mean(as.data.frame(as.data.frame(table(ds$the_day))[2])$Freq), " per day\n",
+              "-> date range: ", min(ds$theday), "-", max(ds$theday)))
+}
+
 refresh()
 
-as.data.frame(ds) %>% as_tibble() -> ds
-ds %>%
-  mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-  mutate(the_day=as.Date(mdy(theday))) ->> ds
-cat("\nlast 5 entries: \n\n") ; tail(ds %>% arrange(EntryPublished),n=10)
+
 
 # stratify by keyword
 
@@ -88,8 +96,9 @@ month(head(sort(ds$the_day))[1]) -> start_month
   select(region, the_day, pullURL) %>%
   filter(!is.na(pullURL) & pullURL != "www.youtube.com/") %>%
   group_by(pullURL,.drop=FALSE) %>%
-  summarize(count=n()) %>% filter(count>min_arts) %>%
-  ggplot()+
+  summarize(count=n()) %>% filter(count>min_arts) -> top_outlets
+  
+  top_outlets %>% ggplot()+
   theme_minimal()+
   scale_fill_discrete(element_blank())+
   geom_bar(aes(x=count,fill=pullURL),position = "dodge")+
@@ -114,6 +123,21 @@ substring(str_extract(ds$EntryURL[-which(str_detect(ds$EntryURL,pattern="www"))]
 append(substring(str_extract(ds$EntryURL[which(str_detect(ds$EntryURL,pattern="www"))], 
                              pattern="https:\\/\\/?www.[a-zA-Z0-9]+?.?[a-z]+/"), first=9),urlList) -> x
 as.data.frame(x)->x
+
+#
+
+ds[grepl(top_outlets$pullURL,x=ds$EntryURL),]
+
+ds[grepl(top_outlets$pullURL,x=ds$EntryURL),] %>%
+  ggplot()+
+  theme_minimal()+
+  scale_fill_discrete(element_blank())+
+  geom_bar(aes(x=count,fill=pullURL),position = "dodge")+
+  theme(legend.position = "bottom",
+        axis.text.y = element_blank())+
+  labs(y=element_blank(),x="# articles per outlet",
+       title = paste("\ntop news sources, 98th percentile")) -> urlPlot
+
 
 # experimental NLP section, keywords used to further tag items
 
