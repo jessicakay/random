@@ -20,12 +20,6 @@
 #
 # set global variables
 
-# install.packages("googledrive") ; library(googledrive)
-# targsheet <- "https://docs.google.com/spreadsheets/d/1dSMwRLOJ1HbYixm7RzS_4Q8Uu1aq3326auxBkJ5g-JY/edit?usp=sharing"
-# tsheetall <- "https://docs.google.com/spreadsheets/d/1HW8m7xKLmCebdSa0RbmBdJkKaD3SZPc8XMQW-Q680FQ/edit?usp=sharing"
-# read_sheet(targsheet) -> dat  
-# read_sheet(tsheetall) -> dat2 
-
 refresh<-function(){
   googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
   dat <<- NULL
@@ -46,8 +40,6 @@ refresh<-function(){
 }
 
 refresh()
-
-
 
 # stratify by keyword
 
@@ -109,7 +101,6 @@ month(head(sort(ds$the_day))[1]) -> start_month
                      start_month,"/",start_day,": \n", sep="")) -> urlPlot
 
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1.25))
-
 
 
 as.data.frame(rbind(dat,dat2)) %>% as_tibble()
