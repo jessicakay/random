@@ -3,12 +3,13 @@
 
  install.packages("googlesheets4")
   
+  { # run first open 
   library(ggplot2)
   library(dplyr)
-  library(png)
   library(stringr)
   library(lubridate)
-  library(googlesheets4)
+  library(googlesheets4) 
+  } 
  
 # clean OAuth tokens and authenticate
 #
