@@ -21,12 +21,12 @@
 # set global variables
 
 refresh<-function(){
-  googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
-  dat <<- NULL
-  for(i in 1:dim(data_sheets)[1]){
-  if(i==1){googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
+   googledrive::drive_find(pattern = "trans news tracker",verbose = TRUE ) -> data_sheets 
+   dat <<- NULL
+   for(i in 1:dim(data_sheets)[1]){
+   if(i==1){googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
     }else{rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) -> dat }
-  dat -> ds ; dat ->> ds}
+   dat -> ds ; dat ->> ds}
   as.data.frame(ds) %>% as_tibble() -> ds
   ds %>%
     mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
@@ -101,5 +101,30 @@ month(head(sort(ds$the_day))[1]) -> start_month
   labs(y=element_blank(),x="# articles per outlet",
        title = paste("\ntop news sources, 98th percentile (",round(min_arts),"+ max = ", max_arts, ") since: ", 
                      start_month,"/",start_day,": \n", sep="")) -> urlPlot
+  
+  
+  top_outlets$pullURL <- gsub(pattern="/",replace="",top_outlets$pullURL)
+  gsub(pattern="/",replace="",ds$pullURL)->ds$pullURL
+  paste(paste(top_outlets$pullURL,sep = " | ",collapse="|"))->k
+  ds[which(grepl(k,ds$pullURL)),] %>% select(pullURL,region) %>% table() 
+  
+  ds[which(grepl(k,ds$pullURL)),] %>% select(pullURL,region,keyword) %>% 
+    ggplot()+
+    theme_bw()+
+    scale_fill_discrete(element_blank())+
+    geom_bar(aes(x=pullURL,fill=pullURL),position = "dodge")+
+    theme(legend.position = "none",
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank())+
+    labs(y=element_blank(),x=element_blank(),title = "Top drivers of conversation by region + keyword")+
+    facet_grid(keyword~region) -> top_plot
+  
+  
 
-gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1.25))
+library(gridExtra)
+
+# gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1.25))
+
+grid.arrange(bottom,urlPlot,heights=c(2.5,0.75)) -> a_plot
+grid.arrange(kw,top_plot,heights=c(2,1.5)) -> b_plot
+gridExtra::grid.arrange(a_plot,b_plot,ncol=2)

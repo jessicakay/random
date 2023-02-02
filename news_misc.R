@@ -1,8 +1,3 @@
-
-gsub(pattern="/",replace="",top_outlets$pullURL)-> top_outlets$pullURL
-
-paste0(top_outlets$pullURL,sep="\"",")
-
 # experimental NLP section, keywords used to further tag items
 
 ds$tag_sports <- ifelse(grepl("(?i)sport|(?i)athletic|(?i)athlete|(?i)competition", ds$EntryContent),1,0)
