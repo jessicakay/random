@@ -35,7 +35,7 @@ refresh<-function(){
     cat("\nlast 5 entries: \n\n")
     print(tail(ds %>% arrange(EntryPublished),n=10))
     cat(paste("\n ->",dim(ds)[1]," rows, ",dim(ds)[2]," variables | avg. = ",
-              mean(as.data.frame(as.data.frame(table(ds$the_day))[2])$Freq), " per day\n",
+              round(mean(as.data.frame(as.data.frame(table(ds$the_day))[2])$Freq),2), " per day\n",
               "-> date range: ", min(ds$theday), "-", max(ds$theday)))
 }
 
@@ -90,6 +90,8 @@ month(head(sort(ds$the_day))[1]) -> start_month
   group_by(pullURL,.drop=FALSE) %>%
   summarize(count=n()) %>% filter(count>min_arts) -> top_outlets
   
+  
+  
   top_outlets %>% ggplot()+
   theme_minimal()+
   scale_fill_discrete(element_blank())+
@@ -101,66 +103,3 @@ month(head(sort(ds$the_day))[1]) -> start_month
                      start_month,"/",start_day,": \n", sep="")) -> urlPlot
 
 gridExtra::grid.arrange(kw,bottom,urlPlot,heights=c(2,2,1.25))
-
-
-as.data.frame(rbind(dat,dat2)) %>% as_tibble()
-
-# below this line is more of a scrap notebook to be incorporated later ; will deprecate
-# 
-# attempt using base R
-
-substring(str_extract(ds$EntryURL[-which(str_detect(ds$EntryURL,pattern="www"))], 
-                      pattern="https:\\/\\/?.[a-zA-Z0-9]+?.?[a-z]+/"), first=9) -> urlList
-append(substring(str_extract(ds$EntryURL[which(str_detect(ds$EntryURL,pattern="www"))], 
-                             pattern="https:\\/\\/?www.[a-zA-Z0-9]+?.?[a-z]+/"), first=9),urlList) -> x
-as.data.frame(x)->x
-
-#
-
-ds[grepl(top_outlets$pullURL,x=ds$EntryURL),]
-
-ds[grepl(top_outlets$pullURL,x=ds$EntryURL),] %>%
-  ggplot()+
-  theme_minimal()+
-  scale_fill_discrete(element_blank())+
-  geom_bar(aes(x=count,fill=pullURL),position = "dodge")+
-  theme(legend.position = "bottom",
-        axis.text.y = element_blank())+
-  labs(y=element_blank(),x="# articles per outlet",
-       title = paste("\ntop news sources, 98th percentile")) -> urlPlot
-
-
-# experimental NLP section, keywords used to further tag items
-
-ds$tag_sports <- ifelse(grepl("(?i)sport|(?i)athletic|(?i)athlete|(?i)competition", ds$EntryContent),1,0)
-ds$tag_leg    <- ifelse(grepl("(?i)bill|(?i)legislat",                              ds$EntryContent),1,0)
-ds$tag_school <- ifelse(grepl("(?i)school|(?i)educat|(?i)universit",                ds$EntryContent),1,0)
-ds$tag_sglsex <- ifelse(grepl("(?i)women\\sonly|(?i)single-sex|(?i)sex-based",      ds$EntryContent),1,0)
-
-
-colIDs <- names(select(ds, contains("tag_")))
-
-ds[which(ds$tag_leg==1),] %>% select(tag_leg, region,the_day) %>% ggplot()+
-  geom_bar(aes(x=the_day,fill=region))
-
-ds %>% tidyr::unite("tags",colIDs, sep = ",", remove = FALSE) %>% select(tags) %>% View()
-
-# NLP using TM package
-
-library(tm)
-
-gsub("<b>|</b>|&nbsp;|;|&#39;|(|)|\\...|&quo","",paste(ds$EntryContent,ds$EntryTitle,collapse = " ")) -> x
-
-as.data.frame(strsplit(x," ")) -> z
-VCorpus(VectorSource(z)) -> zx
-tm_map(zx,removeWords,stopwords(kind = "en")) -> z
-findFreqTerms(term_matrix,lowfreq = 150)
-TermDocumentMatrix(Corpus(VectorSource(x))) -> term_matrix
-findAssocs(term_matrix, term="transgender",corlimit = 0.1)
-
-# RSS directly
-
-install.packages("tidyRSS")
-library(tidyRSS)
-
-tidyRSS::tidyfeed(feed = "https://www.google.com/alerts/feeds/02717371275706320887/1916116072231156194")
