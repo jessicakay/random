@@ -29,37 +29,13 @@ refresh<-function(arg){
    for(i in 1:dim(data_sheets)[1]){
    if(i==1){googlesheets4::read_sheet(data_sheets$id[i]) ->> dat
     }else{rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) -> dat }
-   dat -> ds ; dat ->> ds
-   assign("ds",ds,envir = .GlobalEnv)}
+   dat -> ds ; dat ->> ds ; assign("ds",ds,envir = .GlobalEnv)}
   ds %>% group_by(EntryTitle) %>% as_tibble(as.data.frame()) -> ds
   pullStats()
   }
   if(arg=="statsOnly"){pullStats()}
   assign("ds",ds,envir = .GlobalEnv)
   }
-
-pullStats <- function(){
-  ds %>%
-    mutate(theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
-    mutate(the_day=as.Date(mdy(theday))) -> ds
-  substring(str_extract(ds$EntryURL, pattern="https:\\/\\/?[a-z]+.[a-zA-Z0-9]+?.?[a-z]+/"), first=9) -> ds$pullURL
-  min_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% quantile(c(.98)))
-  max_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% max)
-  month(head(sort(ds$the_day))[1]) -> start_month
-  day(head(sort(ds$the_day))[1]) -> start_day
-  gsub(pattern="/",replace="",ds$pullURL)->ds$pullURL
-  paste(paste(top_outlets$pullURL,sep = " | ",collapse="|"))->k
-  cat("\nlast 5 entries: \n\n");print(tail(ds %>% arrange(EntryPublished),n=10))
-  cat(paste("\n ->",dim(ds)[1]," rows, ",dim(ds)[2]," variables | avg. = ",
-            round(mean(as.data.frame(as.data.frame(table(ds$the_day))[2])$Freq),2), " per day\n",
-            "-> date range: ", min(ds$theday), "-", max(ds$theday)),"\n\n")
-    select(ds, region, the_day, pullURL) %>% 
-      filter(!is.na(pullURL) & pullURL != "www.youtube.com/") %>%
-      group_by(pullURL,.drop=FALSE) %>%
-      summarize(count=n()) %>% filter(count>min_arts) 
-    assign("ds",ds,envir = .GlobalEnv)
-    ds[which(grepl(k,ds$pullURL)),] %>% select(pullURL,region) %>% table() 
-    }
 
 pullStats <- function(){
   mutate(ds, theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
@@ -71,7 +47,7 @@ pullStats <- function(){
   day(head(sort(ds$the_day))[1]) -> start_day
   gsub(pattern="/",replace="",ds$pullURL)->ds$pullURL
   paste(paste(top_outlets$pullURL,sep = " | ",collapse="|"))->k
-  cat("\nlast 5 entries: \n\n");print(tail(ds %>% arrange(EntryPublished),n=10))
+  cat("\nlast 5 entries: \n\n");print(tail(ds %>% arrange(EntryPublished),n=5))
   cat(paste("\n ->",dim(ds)[1]," rows, ",dim(ds)[2]," variables | avg. = ",
             round(mean(as.data.frame(as.data.frame(table(ds$the_day))[2])$Freq),2), " per day\n",
             "-> date range: ", min(ds$theday), "-", max(ds$theday)),"\n\n")
