@@ -31,8 +31,7 @@ refresh<-function(arg){
     }else{rbind(dat, googlesheets4::read_sheet(data_sheets$id[i])) -> dat }
    dat -> ds ; dat ->> ds ; assign("ds",ds,envir = .GlobalEnv)}
   ds %>% group_by(EntryTitle) %>% as_tibble(as.data.frame()) -> ds
-  pullStats()
-  }
+  pullStats()}
   if(arg=="statsOnly"){pullStats()}
   assign("ds",ds,envir = .GlobalEnv)
   }
@@ -55,7 +54,8 @@ pullStats <- function(){
   select(ds, region, the_day, pullURL) %>% 
     filter(!is.na(pullURL) & pullURL != "www.youtube.com/") %>%
     group_by(pullURL,.drop=FALSE) %>%
-    summarize(count=n()) %>% filter(count>min_arts) 
+    summarize(count=n()) %>% filter(count>min_arts) -> top_outlets
+  assign("top_outlets",top_outlets,envir = .GlobalEnv)
   select(ds[which(grepl(k,ds$pullURL)),],region) %>% table() -> total
   assign("ds",ds,envir = .GlobalEnv)
   rbind(ds[which(grepl(k,ds$pullURL)),] %>% select(pullURL,region) %>% table(),total)
@@ -91,7 +91,9 @@ ds %>%
     str_detect(textcontent,"(?i)actor|(?i)film|(?i)movie|(?i)television|(?i)author|(?i)actress|(?i)singer") == TRUE ~ "entertainment",
     str_detect(textcontent,"(?i)legislat|(?i)bill|(?i)lawmaker|(?i)reform|(?i)senat|(?i)ban|(?i)house\\s(?i)repre") == TRUE ~ "legislation",
     str_detect(textcontent,"(?i)medical|(?i)healthcare|(?i)hormone|(?i)medication|(?i)surgery|(?i)physician") == TRUE ~ "healthcare",
-    str_detect(textcontent,"(?i)murder|(?i)rape|(?i)rapist|(?i)kidnap|(?i)killed|(?i)offender|(?i)predator|(?i)assault") == TRUE ~ "crime")) %>% 
+    str_detect(textcontent,"(?i)murder|(?i)rape|(?i)rapist|(?i)kidnap|(?i)killed|(?i)offender|(?i)predator|(?i)assault") == TRUE ~ "crime")) -> ds 
+
+ds %>%
   ggplot()+
   geom_bar(aes(x=the_day, fill=topic), position="fill")+
   facet_grid(keyword~region)+

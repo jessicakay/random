@@ -11,6 +11,13 @@ colIDs <- names(select(ds, contains("tag_")))
 ds[which(ds$tag_leg==1),] %>% select(tag_leg, region,the_day) %>% ggplot()+
   geom_bar(aes(x=the_day,fill=region))
 
+
+ds %>% mutate(timetime=as.POSIXct(thetime)) %>%
+  ggplot()+
+  geom_point(aes(x=the_day,y=timetime,color=topic))+
+  facet_grid(keyword~region)
+
+
 ds %>% tidyr::unite("tags",colIDs, sep = ",", remove = FALSE) %>% select(tags) %>% View()
 
 # NLP using TM package
@@ -35,4 +42,3 @@ tidyRSS::tidyfeed(feed = "https://www.google.com/alerts/feeds/027173712757063208
 
 
 ds$EntryPublished
-substr(ds$EntryPublished,nchar(ds$EntryPublished)-6,nchar(ds$EntryPublished))
