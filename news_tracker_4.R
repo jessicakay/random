@@ -39,6 +39,7 @@ refresh<-function(arg){
 
 pullStats <- function(){
   mutate(ds, theday=str_extract(EntryPublished,pattern = "[a-zA-Z]+\\s[0-9]+\\,\\s20[0-9]+")) %>%
+  mutate(thetime=strptime(substr(ds$EntryPublished,nchar(ds$EntryPublished)-6,nchar(ds$EntryPublished)),format="%H:%M")) %>%
     mutate(the_day=as.Date(mdy(theday))) -> ds
   substring(str_extract(ds$EntryURL, pattern="https:\\/\\/?[a-z]+.[a-zA-Z0-9]+?.?[a-z]+/"), first=9) -> ds$pullURL
   min_arts <- as.numeric(summarize(group_by(ds %>% filter(!is.na(pullURL)), pullURL),ct=n())$ct %>% quantile(c(.98)))
@@ -64,8 +65,6 @@ refresh("all")
 pullStats()
 
   
-sumTab[2]
-
 # stratify by keyword
 
 ds %>% group_by(the_day,region,keyword) %>% mutate(ct=n()) %>% ggplot()+

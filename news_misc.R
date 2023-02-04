@@ -32,3 +32,7 @@ install.packages("tidyRSS")
 library(tidyRSS)
 
 tidyRSS::tidyfeed(feed = "https://www.google.com/alerts/feeds/02717371275706320887/1916116072231156194")
+
+
+ds$EntryPublished
+substr(ds$EntryPublished,nchar(ds$EntryPublished)-6,nchar(ds$EntryPublished))
